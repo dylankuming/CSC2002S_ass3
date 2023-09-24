@@ -1,9 +1,9 @@
 .data
-filename:   .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3 images/house_64_in_ascii_lf.ppm"
+filename:   .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/jet_64_in_ascii_lf.ppm"
 buffer:     .space 50000
 output:     .space 50000
 reversed_value: .space 4
-outfile:    .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3 images/greyscale.ppm"
+outfile:    .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/greyscale.ppm"
 
 
 
