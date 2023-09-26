@@ -11,7 +11,7 @@ outfile:    .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSIT
 .globl main
 
 main:
-    #Open File for reading
+    #Open File for read
     li $v0, 13
     la $a0, filename
     li $a1, 0
