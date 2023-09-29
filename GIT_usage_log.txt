@@ -1,1 +1,68 @@
 https://github.com/dylankuming/CSC2002S_ass3.git
+
+C:\Users\dylan\OneDrive - University of Cape Town\UNIVERSITY FILES\Third Year\Semester 2\CSC2002S\Assignment 3>git log
+commit 5e3864271372abb77178cc8a1ae434bd6d498751 (HEAD -> main, origin/main)
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:49:49 2023 +0200
+
+    git log
+
+commit 592b7b56a6468184551a38f5f028097d518356fd
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:43:37 2023 +0200
+
+    README
+
+commit 20eeab07b538299fb0a86ccc4be26a8bcad2eb2f
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:42:53 2023 +0200
+
+    comments
+
+commit d914ae2f30cda83e0543fefa53e9788d5a8c3905
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:39:43 2023 +0200
+
+    comments
+
+commit f045eac8567b8c048a0726fd99240b3ee51ac590
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:04:37 2023 +0200
+
+    error fix2
+
+commit 4f227e3801b5c09c260c72c3696a1c21ad237773
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Tue Sep 26 20:43:10 2023 +0200
+
+    error fix
+
+commit 7c5991b0d8e607fa732ea96b20ba7096a31e1260
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Sep 24 17:26:25 2023 +0200
+
+    ppm files
+
+commit 1d8abd48f3e01a40b3025a2ae2c9918ffe29d0f9
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Sep 24 17:18:22 2023 +0200
+
+    Question 2
+
+commit 99cd1926afced797dc01a5516b69874c86cfc6a8
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Sep 24 17:17:38 2023 +0200
+
+    Question 1
+
+commit fac5d898c2f4ecbea3aeb17136bcc10fb9c560e8
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Sep 24 17:15:44 2023 +0200
+
+    first commit
+
+commit 81e7bd1732cfb0ce44d5c33d8e735af4e0827168
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Sep 24 17:13:54 2023 +0200
+
+    Images
