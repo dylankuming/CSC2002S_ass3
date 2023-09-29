@@ -46,4 +46,3 @@ Before running the programs, you need to set the file paths of the input and out
 - If the image does not appear as expected, ensure that the file path and image format are correct.
 - Check the QTSpim console for any error messages or notifications.
 
-Enjoy processing your images!
