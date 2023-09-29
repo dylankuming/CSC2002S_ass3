@@ -1,17 +1,16 @@
 .data
-filename:   .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/jet_64_in_ascii_lf.ppm"
+filename:   .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm"
+outfile:    .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/greyscale.ppm"
 buffer:     .space 50000
 output:     .space 50000
 reversed_value: .space 4
-outfile:    .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/greyscale.ppm"
-
 
 
 .text
 .globl main
 
 main:
-    #Open File for read
+    #Open File for reading
     li $v0, 13
     la $a0, filename
     li $a1, 0
@@ -32,30 +31,33 @@ main:
     move $a0, $s6
     syscall
 
-    li $t0, 3   #Character counter
+    li $t0, 3   #Keeps track of position reading from in buffer
     li $t1, 0   #Count end of line chars
-    li $t4, 0   #Position writing to in output
-    li $t7, 0
-    li $s1, 0
-    li $s5, 10
+    li $t4, 0   #Keeps track of position writing to in output buffer
+    li $t7, 0   #Keeps track of position writing to in reversed_string buffer
+    li $s1, 0   #Holds sum of values of 3 lines that must be averaged 
+    li $t5, 0   #Used to count to 3 lines
 
+    #Write P
     li $t2, 80
     sb $t2, output($t4)
     addi $t4, 1
+    #Write 2
     li $t2, 50
     sb $t2, output($t4)
     addi $t4, 1
+    #Write \n
     li $t2, 10
     sb $t2, output($t4)
     addi $t4, 1
 
 file_info_loop:
-    beq $t1, 3, pixel_value_loop
+    beq $t1, 3, pixel_value_loop    #All file info stored after 3 new line characters
     lb $t2, buffer($t0)
     sb $t2, output($t4)
     addi $t0, 1
     addi $t4, 1
-    beq $t2, 10, lf
+    beq $t2, 10, lf #If new line
     j file_info_loop
 
 lf:
@@ -64,16 +66,13 @@ lf:
 
 pixel_value_loop:
     li $s0, 0   #$s0 will hold current value
-    li $s1, 0
-    li $t7, 0
-    li $t5, 0  #Used to count to 3 lines
+    
 
 string_to_int:
     lb $t2, buffer($t0)
     addi $t0, $t0, 1
     beq $t2, $zero, write_file
     beq $t2, 10, plus
-    beq $t5, 3, average
     
     sub $t2, $t2, 48
     mul $s0, $s0, 10
@@ -84,25 +83,29 @@ string_to_int:
 plus:
     add $s1, $s1, $s0
     addi $t5, 1
-    j string_to_int
+    beq $t5, 3, average
+    j pixel_value_loop
 
 average:
     li $s6, 3
     div $s1, $s6
     mflo $s0
+    li $s1,0
+    li $t7, 0
+    li $t5, 10
 
 int_to_string:
-    div $s0, $s5
-    mflo $s0
-    mfhi $t3
-    addi $t3, 48
-    sb $t3, reversed_value($t7)
-    addi $t7, 1
+    div $s0, $t5    
+    mflo $s0        
+    mfhi $t3        
+    addi $t3, 48    
+    sb $t3, reversed_value($t7) 
+    addi $t7, 1     
     beq $s0, $zero, startReverse
     j int_to_string
 
 startReverse:
-    li $t6, 2
+     li $t6, 2
 
 reverse_string:
     lb $t2, reversed_value($t6)
@@ -116,10 +119,14 @@ newLine:
     li $t5, 10
     sb $t5, output($t4)
     addi $t4, 1
+    li $t5, 0
     j pixel_value_loop
 
 write_file:
 
+    li $v0, 4
+    la $a0, outfile
+    syscall
     # Open the output file for writing
     li $v0, 13         # System call code for opening a file (13)
     la $a0, outfile    # Load the address of the output file name
@@ -139,6 +146,7 @@ write_file:
     li $v0, 16         # System call code for closing a file (16)
     move $a0, $s8      # File descriptor
     syscall
+
 
 exit:
     li $v0, 10

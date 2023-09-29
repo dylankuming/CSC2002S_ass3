@@ -1,15 +1,17 @@
 .data
-filename:   .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/jet_64_in_ascii_lf.ppm"
-outfile:    .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/output.ppm"
-buffer:     .space 50000
-output:     .space 50000
-reversed_value: .space 4
-
+    filename:   .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm"
+    buffer:     .space 50000
+    output:     .space 50000
+    reversed_value: .space 4
+    average_before: .asciiz"Average pixel value of the original image:\n"
+    average_after:  .asciiz"\nAverage pixel value of new image:\n"
+    outfile:    .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/output.ppm"
 
 .text
 .globl main
 
 main:
+
     #Open File for reading
     li $v0, 13
     la $a0, filename
@@ -31,25 +33,16 @@ main:
     move $a0, $s6
     syscall
 
-    li $t0, 3   #Character counter
+    li $t0, 0   #Character counter
     li $t1, 0   #Count end of line chars
     li $t4, 0   #Position writing to in output
+    li $t5, 10  #Used to divide by 10
     li $t7, 0
     li $s1, 0
-    li $t5, 0  #Used to count to 3 lines
-
-    li $t2, 80
-    sb $t2, output($t4)
-    addi $t4, 1
-    li $t2, 50
-    sb $t2, output($t4)
-    addi $t4, 1
-    li $t2, 10
-    sb $t2, output($t4)
-    addi $t4, 1
+    li $s2, 0
 
 file_info_loop:
-    beq $t1, 3, pixel_value_loop
+    beq $t1, 4, pixel_value_loop
     lb $t2, buffer($t0)
     sb $t2, output($t4)
     addi $t0, 1
@@ -63,13 +56,13 @@ lf:
 
 pixel_value_loop:
     li $s0, 0   #$s0 will hold current value
-    
+    li $t7, 0
 
 string_to_int:
     lb $t2, buffer($t0)
     addi $t0, $t0, 1
     beq $t2, $zero, write_file
-    beq $t2, 10, plus
+    beq $t2, 10, add_ten
     
     sub $t2, $t2, 48
     mul $s0, $s0, 10
@@ -77,27 +70,24 @@ string_to_int:
 
     j string_to_int
 
-plus:
+add_ten:
+    add $s2, $s2, $s0
+    bgt $s0, 245, set_value
+    addi $s0, 10
     add $s1, $s1, $s0
-    addi $t5, 1
-    beq $t5, 3, average
-    j pixel_value_loop
+    j int_to_string
 
-average:
-    li $s6, 3
-    div $s1, $s6
-    mflo $s0
-    li $s1,0
-    li $t7, 0
-    li $t5, 10
+set_value:
+    li $s0, 255
+    add $s1, $s1, $s0
 
 int_to_string:
-    div $s0, $t5    
-    mflo $s0        
-    mfhi $t3        
-    addi $t3, 48    
-    sb $t3, reversed_value($t7) 
-    addi $t7, 1     
+    div $s0, $t5
+    mflo $s0
+    mfhi $t3
+    addi $t3, 48
+    sb $t3, reversed_value($t7)
+    addi $t7, 1
     beq $s0, $zero, startReverse
     j int_to_string
 
@@ -114,15 +104,32 @@ reverse_string:
 
 newLine:
     li $t5, 10
-    sb $t5, output($t4)
+    sb $t5 output($t4)
     addi $t4, 1
-    li $t5, 0
     j pixel_value_loop
 
 write_file:
 
     li $v0, 4
-    la $a0, outfile
+    la $a0, average_before
+    syscall
+
+    li $t0, 3133440 # 64x64x3x255
+    mtc1 $t0, $f13
+    mtc1 $s2, $f12
+    div.s $f12, $f12, $f13
+    li $v0, 2
+    syscall
+
+    li $v0, 4
+    la $a0, average_after
+    syscall
+
+    li $t0, 3133440 # 64x64x3x255
+    mtc1 $t0, $f13
+    mtc1 $s1, $f12
+    div.s $f12, $f12, $f13
+    li $v0, 2
     syscall
     # Open the output file for writing
     li $v0, 13         # System call code for opening a file (13)
@@ -144,7 +151,8 @@ write_file:
     move $a0, $s8      # File descriptor
     syscall
 
-
 exit:
-    li $v0, 10
-    syscall
+    li $v0, 10
+    syscall
+
+
