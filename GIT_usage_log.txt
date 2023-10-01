@@ -1,7 +1,31 @@
 https://github.com/dylankuming/CSC2002S_ass3.git
 
 C:\Users\dylan\OneDrive - University of Cape Town\UNIVERSITY FILES\Third Year\Semester 2\CSC2002S\Assignment 3>git log
-commit 5e3864271372abb77178cc8a1ae434bd6d498751 (HEAD -> main, origin/main)
+commit f945d213852dcaf91daf729535ac9591a20635ae (HEAD -> main, origin/main)
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Oct 1 16:12:15 2023 +0200
+
+    error fix final
+
+commit 391a6f8b951fa9ea3e4ee0d4e18d2a184d16a001
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Sun Oct 1 16:07:30 2023 +0200
+
+    error fix final
+
+commit 66e07d3a59bfb5d2a9fb4c953f6572ab56cc50f4
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 13:37:24 2023 +0200
+
+    final
+
+commit 3bf82396a932806f506e8d23026d308143bf83a4
+Author: Dylan Kuming <dylankuming1@gmail.com>
+Date:   Fri Sep 29 08:51:22 2023 +0200
+
+    git log
+
+commit 5e3864271372abb77178cc8a1ae434bd6d498751
 Author: Dylan Kuming <dylankuming1@gmail.com>
 Date:   Fri Sep 29 08:49:49 2023 +0200
 
@@ -66,3 +90,4 @@ Author: Dylan Kuming <dylankuming1@gmail.com>
 Date:   Sun Sep 24 17:13:54 2023 +0200
 
     Images
+(END)
