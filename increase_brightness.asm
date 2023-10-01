@@ -1,172 +1,191 @@
 .data
-    filename:   .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm" # File path for the input PPM image
-    buffer:     .space 50000 # Buffer to hold the content of the input file
-    output:     .space 50000 # Buffer to hold the content of the output file after processing
-    reversed_value: .space 4 # Buffer to hold the reversed string representation of a number
-    average_before: .asciiz"Average pixel value of the original image:\n" # Message for the average pixel value before modification
-    average_after:  .asciiz"\nAverage pixel value of new image:\n" # Message for the average pixel value after modification
-    outfile:    .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/output.ppm" # File path for the output PPM image
-
+    file_in: .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm" # input file path
+    file_out: .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/output.ppm" # output file path
+    out1: .asciiz "Average pixel value of the original image:\n" # message prefix for original image avg value
+    out2: .asciiz "\nAverage pixel value of new image:\n" # message prefix for new image avg value
+    buffer_in: .space 100000 # input buffer space
+    buffer_out: .space 100000 # output buffer space
 .text
 .globl main
 
 main:
-    # Open File for reading
-    li $v0, 13 # System call code for opening a file
-    la $a0, filename # Load the address of the file name
-    li $a1, 0 # File open mode: 0 (read)
-    li $a2, 0 # File permission: 0 (not applicable for reading)
-    syscall # Execute system call
-    move $s6, $v0   # Store file descriptor in $s6
+    # File Handling
+    li $v0, 13 # syscall for opening a file
+    la $a0, file_in # load input file path
+    li $a1, 0 # flag for read mode
+    li $a2, 0 # no use in read mode
+    syscall # execute syscall
+    move $s6, $v0 # store file descriptor to s6
 
-    # Read file into buffer
-    li $v0, 14 # System call code for reading from a file
-    move $a0, $s6 # File descriptor
-    la $a1, buffer # Load the address of the buffer
-    li $a2, 49999 # Number of bytes to read
-    syscall # Execute system call
-    move $s7, $v0   # Store number of characters read in $s7
+    li $v0, 13 # syscall for opening a file
+    la $a0, file_out # load output file path
+    li $a1, 1 # flag for write mode
+    li $a2, 0 # no use in write mode
+    syscall # execute syscall
+    move $s7, $v0 # store file descriptor to s7
 
-    # Close file
-    li $v0, 16 # System call code for closing a file
-    move $a0, $s6 # File descriptor
-    syscall # Execute system call
+read_file:
+    li $v0, 14 # syscall for reading from a file
+    move $a0, $s6 # move file descriptor to a0
+    la $a1, buffer_in # load address of input buffer
+    li $a2, 100000 # number of bytes to read
+    syscall # execute syscall
 
-    # Initialize registers
-    li $t0, 0   # Character counter
-    li $t1, 0   # Count end of line characters
-    li $t4, 0   # Position for writing to in output buffer
-    li $t5, 10  # Value used for division by 10 in integer to string conversion
-    li $t7, 0   
-    li $s1, 0   # Sum of modified pixel values for average calculation
-    li $s2, 0   # Sum of original pixel values for average calculation
+    la $s0, buffer_in # load address of input buffer to s0
+    la $s1, buffer_out # load address of output buffer to s1
+    la $s2, buffer_out # another pointer for output buffer
+    li $t0, 0 # initialize counter for header lines
 
-# Loop to process the header of the PPM file
-file_info_loop:
-    beq $t1, 4, pixel_value_loop # If 4 end of line characters are counted, move to processing pixel values
-    lb $t2, buffer($t0) # Load a byte from the buffer into $t2
-    sb $t2, output($t4) # Store the byte in the output buffer
-    addi $t0, 1 # Increment character counter
-    addi $t4, 1 # Increment output buffer position
-    beq $t2, 10, lf # If end of line character is encountered, increment end of line counter
-    j file_info_loop
+loop_h:
+    lb $t1, ($s0) # load byte from input buffer
+    sb $t1, ($s1) # store byte to output buffer
+    addi $s0, $s0, 1 # increment input buffer address
+    addi $s1, $s1, 1 # increment output buffer address
+    beq $t1, 10, end_hline # if new line character, go to end of header line
+    j loop_h # loop again
 
-# Increment end of line counter
-lf:
-    addi $t1, 1 
-    j file_info_loop
+end_hline:
+    addi $t0, $t0, 1 # increment header line counter
+    beq $t0, 4, end_h # if 4 lines read, end header reading
+    j loop_h # else continue loop
 
-# Loop to process the pixel values in the PPM file
-pixel_value_loop:
-    li $s0, 0   # Register to hold the current pixel value
-    li $t7, 0
+end_h: 
+    # Initialize registers for reading pixel values and calculations
+    li $t2, 0 # initialize integer value of pixel component
+    li $t0, 0 # initialize digit counter
+    li.d $f0, 0.0 # initialize sum for original pixel values
+    li.d $f2, 0.0 # initialize sum for modified pixel values
+    li $t5, 0 # initialize line counter
 
-# Convert ASCII string to integer
-string_to_int:
-    lb $t2, buffer($t0) # Load a byte from the buffer
-    addi $t0, $t0, 1 # Increment character counter
-    beq $t2, $zero, write_file # If null terminator is encountered, move to file writing
-    beq $t2, 10, add_ten # If end of line character is encountered, increment the pixel value by ten
-    
-    # Convert ASCII character to integer and build up the pixel value
-    sub $t2, $t2, 48 
-    mul $s0, $s0, 10 
-    add $s0, $s0, $t2
+to_int:
+    lb $t1, ($s0) # load a byte from the input buffer
+    beq $t1, 10, end_line # if new line, end line reading
+    beq $t1, 0, end_file # if null byte, end of file reached
+    addi $t1, $t1, -48 # convert ASCII to integer
+    mul $t2, $t2, 10 # previous value times 10
+    add $t2, $t2, $t1 # add current value
+    addi $s0, $s0, 1 # increment input pointer
+    addi $s1, $s1, 1 # increment output pointer
+    addi $t0, $t0, 1 # increment digit counter
+    j to_int # loop
 
-    j string_to_int
+end_line:
+    # Handle end of line and calculate average
+    addi $t5, $t5, 1 # increment line counter
+    beq $t5, 12290, end_file # if all lines read, end file processing
+    mtc1 $t2, $f4 # move integer to coprocessor
+    cvt.d.w $f4, $f4 # convert word to double
+    add.d $f0, $f0, $f4 # add to sum of original pixel values
+    addi $s0, $s0, 1 # increment input pointer for next line
 
-# Add ten to the pixel value, ensuring it doesn’t exceed 255
-add_ten:
-    add $s2, $s2, $s0 # Add the original pixel value to the sum
-    bgt $s0, 245, set_value # If the pixel value is greater than 245, set it to 255
-    addi $s0, 10 # Otherwise, add ten to the pixel value
-    add $s1, $s1, $s0 # Add the modified pixel value to the sum
-    j int_to_string
+    # Check for edge cases, maximum value, or increase by 10
+    blt $t2, 10, pad # if value less than 10, handle padding
+    bgt $t2, 89, pad # if value greater than 89, handle padding
+    bgt $t2, 244, max_vals # if value greater than 244, set to max 255
+    addi $t2, $t2, 10 # add 10 to the value
+    mtc1 $t2, $f4 # move new value to coprocessor
+    cvt.d.w $f4, $f4 # convert to double
+    add.d $f2, $f2, $f4 # add to sum of modified pixel values
+    li $t7, 10 # load ASCII of newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-# Set the pixel value to 255 if adding ten would exceed 255
-set_value:
-    li $s0, 255 
-    add $s1, $s1, $s0 
+pad:
+    # Handle padding for single and double digit values
+    bgt $t2, 99, npad # if value greater than 99 but less than 244, no padding needed
+    addi $t2, $t2, 10 # add 10 to value
+    mtc1 $t2, $f4 # move to coprocessor
+    cvt.d.w $f4, $f4 # convert to double
+    add.d $f2, $f2, $f4 # add to sum of modified pixel values
+    addi $t0, $t0, 1 # increment digit counter
+    addi $s1, $s1, 1 # increment output pointer
+    li $t7, 10 # load ASCII of newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-# Convert integer pixel value to ASCII string
-int_to_string:
-    div $s0, $t5 # Divide the pixel value by ten to separate the digits
-    mflo $s0 
-    mfhi $t3 
-    addi $t3, 48 # Convert the remainder to ASCII
-    sb $t3, reversed_value($t7) # Store the ASCII character in the reversed string buffer
-    addi $t7, 1 
-    beq $s0, $zero, startReverse # If the pixel value is zero, start reversing the string
-    j int_to_string
+npad:
+    # Handle non-padded values
+    addi $t2, $t2, 10 # add 10 to value
+    mtc1 $t2, $f4 # move to coprocessor
+    cvt.d.w $f4, $f4 # convert to double
+    add.d $f2, $f2, $f4 # add to sum of modified pixel values
+    li $t7, 10 # load ASCII of newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-# Reverse the ASCII string for correct output
-startReverse:
-    li $t6, 2 
+max_vals:
+    # Handle max values
+    li $t2, 255 # set value to max 255
+    mtc1 $t2, $f4 # move to coprocessor
+    cvt.d.w $f4, $f4 # convert to double
+    add.d $f2, $f2, $f4 # add to sum of modified pixel values
+    li $t7, 10 # load ASCII of newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-reverse_string:
-    lb $t2, reversed_value($t6) # Load a character from the reversed string buffer
-    sb $t2, output($t4) # Store the character in the output buffer
-    addi $t4, 1 # Increment output buffer position
-    beq $t6, $zero, newLine # If all characters are processed, add a new line character to the output
-    sub $t6, 1 
-    j reverse_string
+to_string:
+    # Convert integer value to string and store in output buffer
+    beqz $t2, end_to_string # if value is 0, end conversion
+    divu $t2, $t2, 10 # divide value by 10 to get each digit
+    mfhi $t3 # move remainder to t3
+    addi $t3, $t3, 48 # convert to ASCII
+    sb $t3, -1($s1) # store ASCII character to output buffer, moving backwards
+    addi $s1, $s1, -1 # move output pointer backwards
+    j to_string # loop
 
-# Add a new line character to the output
-newLine:
-    li $t5, 10 
-    sb $t5 output($t4) 
-    addi $t4, 1 
-    j pixel_value_loop
+end_to_string:
+    # After conversion, adjust pointers and counters
+    add $s1, $s1, $t0 # adjust output pointer position
+    addi $s1, $s1, 1 # increment output pointer
+    li $t0, 0 # reset value
+    j to_int # start next value reading and conversion
 
-# Print the averages and write the modified image to a file
-write_file:
-    # Print the average pixel value before modification
-    li $v0, 4 
-    la $a0, average_before 
-    syscall 
+end_file:
+    # End of file, finalize output buffer and calculate size
+    sb $t1, ($s1) # store last byte to output buffer
+    sub $s2, $s1, $s2 # calculate size of output
+    addi $s2, $s2, -2 # adjust size
 
-    # Calculate and print the average pixel value before modification
-    li $t0, 3133440 # Total number of pixels times max value
-    mtc1 $t0, $f13 # Move to co-processor 1
-    mtc1 $s2, $f12 
-    div.s $f12, $f12, $f13 # Divide the sum of original values by total pixels times max value
-    li $v0, 2 
-    syscall 
+    # Write to output file
+    li $v0, 15 # syscall for writing to file
+    move $a0, $s7 # move file descriptor to a0
+    la $a1, buffer_out # load address of output buffer
+    move $a2, $s2 # move size to a2
+    syscall # execute syscall
 
-    # Print the message for average pixel value after modification
-    li $v0, 4 
-    la $a0, average_after 
-    syscall 
+close_files:
+    # Close both files
+    li $v0, 16 # syscall for closing file
+    move $a0, $s6 # move file descriptor to a0
+    syscall # execute syscall
 
-    # Calculate and print the average pixel value after modification
-    li $t0, 3133440 # Total number of pixels times max value
-    mtc1 $t0, $f13 
-    mtc1 $s1, $f12 
-    div.s $f12, $f12, $f13 # Divide the sum of modified values by total pixels times max value
-    li $v0, 2 
-    syscall 
+    li $v0, 16 # syscall for closing file
+    move $a0, $s7 # move file descriptor to a0
+    syscall # execute syscall
 
-    # Open the output file for writing
-    li $v0, 13 
-    la $a0, outfile 
-    li $a1, 1 
-    li $a2, 0 
-    syscall 
-    move $s8, $v0 
+averages:
+    # Calculate average pixel values
+    li.d $f4, 1044480.0 # load total number of pixels as double
+    div.d $f0, $f0, $f4 # calculate average for original image
+    div.d $f2, $f2, $f4 # calculate average for modified image
 
-    # Write the content of the output buffer to the file
-    li $v0, 15 
-    move $a0, $s8 
-    la $a1, output 
-    li $a2, 50000 
-    syscall 
+    # Print averages
+    li $v0, 4 # syscall for printing string
+    la $a0, out1 # load prefix message for original image
+    syscall # execute syscall
 
-    # Close the output file
-    li $v0, 16 
-    move $a0, $s8 
-    syscall 
+    li $v0, 3 # syscall for printing double
+    mov.d $f12, $f0 # move average of original image to f12
+    syscall # execute syscall
 
-# Exit the program
+    li $v0, 4 # syscall for printing string
+    la $a0, out2 # load prefix message for modified image
+    syscall # execute syscall
+
+    li $v0, 3 # syscall for printing double
+    mov.d $f12, $f2 # move average of modified image to f12
+    syscall # execute syscall
+
 exit:
-    li $v0, 10 
-    syscall 
+    li   $v0, 10 # syscall for exit
+    syscall # exit program

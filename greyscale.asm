@@ -1,161 +1,164 @@
 .data
-filename:   .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm"  # Input file path
-outfile:    .asciiz"C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/greyscale.ppm"  # Output file path
-buffer:     .space 50000  # Buffer for input file
-output:     .space 50000  # Buffer for output file
-reversed_value: .space 4  # Buffer for reversed values
-
+    file_in: .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/Images/tree_64_in_ascii_lf.ppm"  # input file path
+    file_out: .asciiz "C:/Users/dylan/OneDrive - University of Cape Town/UNIVERSITY FILES/Third Year/Semester 2/CSC2002S/Assignment 3/greyscale.ppm" # output file path
+    buffer_in: .space 60000  # input buffer space
+    buffer_out: .space 60000  # output buffer space
 .text
 .globl main
 
 main:
-    # Open the file for reading
-    li $v0, 13  # System call for open file
-    la $a0, filename  # Address of file name
-    li $a1, 0  # File mode (0 = read)
-    li $a2, 0  # Permissions (not needed for read)
-    syscall  # Make system call
-    move $s6, $v0   # Store file descriptor
+    # File Handling
+    li $v0, 13 # syscall for opening a file
+    la $a0, file_in # load input file path
+    li $a1, 0 # flag for read mode
+    li $a2, 0 # no use in read mode
+    syscall # execute syscall
+    move $s6, $v0 # store file descriptor to s6
 
-    # Read the file into the buffer
-    li $v0, 14  # System call for read from file
-    move $a0, $s6  # File descriptor
-    la $a1, buffer  # Address of buffer
-    li $a2, 49999  # Number of bytes to read
-    syscall  # Make system call
-    move $s7, $v0   # Store number of characters read
+    li $v0, 13 # syscall for opening a file
+    la $a0, file_out # load output file path
+    li $a1, 1 # flag for write mode
+    li $a2, 0 # no use in write mode
+    syscall # execute syscall
+    move $s7, $v0 # store file descriptor to s7
 
-    # Close the file
-    li $v0, 16  # System call for close file
-    move $a0, $s6  # File descriptor
-    syscall  # Make system call
+read_file:
+    li $v0, 14 # syscall for reading from a file
+    move $a0, $s6 # move file descriptor to a0
+    la $a1, buffer_in # load address of input buffer
+    li $a2, 60000 # number of bytes to read
+    syscall # execute syscall
 
-    # Initialize registers for loop processing
-    li $t0, 3   # Position in buffer
-    li $t1, 0   # Newline character counter
-    li $t4, 0   # Position in output buffer
-    li $t7, 0   # Position in reversed_value buffer
-    li $s1, 0   # Sum of RGB values
-    li $t5, 0   # Counter for every 3 lines
+    la $s0, buffer_in # load address of input buffer to s0
+    la $s1, buffer_out # load address of output buffer to s1
+    la $s2, buffer_out # another pointer for output buffer
+    li $t0, 1 # initialize counter for header lines
 
-    # Manually write "P2\n" to the output to change file type to grayscale
-    li $t2, 80  # ASCII value for 'P'
-    sb $t2, output($t4)  # Store 'P' in output
-    addi $t4, 1  # Increment position in output buffer
-    li $t2, 50  # ASCII value for '2'
-    sb $t2, output($t4)  # Store '2' in output
-    addi $t4, 1  # Increment position in output buffer
-    li $t2, 10  # ASCII value for newline character
-    sb $t2, output($t4)  # Store newline in output
-    addi $t4, 1  # Increment position in output buffer
+    # Hardcoding P2 format specification for the output image header
+    li $t1, 80 # ASCII for 'P'
+    sb $t1, ($s1) # store 'P' to output buffer
+    addi $s0, $s0, 1 # increment input buffer address
+    addi $s1, $s1, 1 # increment output buffer address
+    li $t1, 50 # ASCII for '2'
+    sb $t1, ($s1) # store '2' to output buffer
+    addi $s0, $s0, 1 # increment input buffer address
+    addi $s1, $s1, 1 # increment output buffer address
+    li $t1, 10 # ASCII for newline
+    sb $t1, ($s1) # store newline to output buffer
+    addi $s0, $s0, 1 # increment input buffer address
+    addi $s1, $s1, 1 # increment output buffer address
 
-# Loop through file info until the pixel values are reached
-file_info_loop:
-    beq $t1, 3, pixel_value_loop    # Skip to pixel values after 3 new lines
-    lb $t2, buffer($t0)  # Load byte from buffer
-    sb $t2, output($t4)  # Store byte in output buffer
-    addi $t0, 1  # Increment buffer position
-    addi $t4, 1  # Increment output buffer position
-    beq $t2, 10, lf  # If newline, increment newline counter
-    j file_info_loop  # Otherwise, continue loop
+loop_h:
+    lb $t1, ($s0) # load byte from input buffer
+    sb $t1, ($s1) # store byte to output buffer
+    addi $s0, $s0, 1 # increment input buffer address
+    addi $s1, $s1, 1 # increment output buffer address
+    beq $t1, 10, end_hline # if newline, go to end of header line
+    j loop_h # loop again
 
-# Increment newline counter and continue loop
-lf:
-    addi $t1, 1  # Increment newline counter
-    j file_info_loop  
+end_hline:
+    addi $t0, $t0, 1 # increment header line counter
+    beq $t0, 4, end_h # if 4 lines read, end header reading
+    j loop_h # else continue loop
 
-# Begin processing pixel values for grayscale conversion
-pixel_value_loop:
-    li $s0, 0   # Reset current value holder
+end_h: 
+    # Initialization for reading pixel values
+    li $t2, 0 # initialize integer value of pixel component
+    li $t0, 0 # initialize digit counter
+    li $t3, 0 # initialize counter for the number of pixels read
+    li $t4, 0 # initialize sum of RGB components
+    li $t5, 0 # initialize line counter for the grayscale values
 
-# Convert ASCII characters to integer pixel value
-string_to_int:
-    lb $t2, buffer($t0)  # Load byte from buffer
-    addi $t0, $t0, 1  # Increment buffer position
-    beq $t2, $zero, write_file  # If null terminator, begin writing file
-    beq $t2, 10, plus  # If newline, process accumulated value
-    
-    # Compute integer value from ASCII characters
-    sub $t2, $t2, 48  # Convert ASCII to integer
-    mul $s0, $s0, 10  # Shift current value left by one digit
-    add $s0, $s0, $t2  # Add new digit to current value
+to_int:
+    lb $t1, ($s0) # load a byte from the input buffer
+    beq $t1, 10, end_line # if newline, end line reading
+    beq $t1, 0, end_file # if null byte, end of file reached
+    addi $t1, $t1, -48 # convert ASCII to integer
+    mul $t2, $t2, 10 # previous value times 10
+    add $t2, $t2, $t1 # add current value
+    addi $s0, $s0, 1 # increment input pointer
+    j to_int # loop
 
-    j string_to_int  # Continue loop
+end_line:
+    # Process the end of a line, calculate the average and prepare for next line
+    addi $s0, $s0, 1 # increment input pointer for next line
+    addi $t3, $t3, 1 # increment pixel counter
+    add $t4, $t4, $t2 # add current pixel value to sum
+    li $t2, 0 # reset current pixel value for next pixel
+    beq $t3, 3, end_three_line # if 3 pixels read (RGB), calculate grayscale value
+    j to_int # continue reading next pixel value
 
-# Process accumulated RGB values for grayscale conversion
-plus:
-    add $s1, $s1, $s0  # Add current value to sum
-    addi $t5, 1  # Increment line counter
-    beq $t5, 3, average  # If 3 lines processed, calculate average
-    j pixel_value_loop  # Otherwise, continue loop
+end_three_line:
+    # Calculate the grayscale value and prepare for the output
+    addi $t5, $t5, 1 # increment grayscale line counter
+    beq $t5, 4097, end_file # if all lines read, end file processing
+    divu $t4, $t4, 3 # calculate average grayscale value
+    mflo $t2 # get the quotient
 
-# Calculate the average of the 3 RGB values for grayscale
-average:
-    li $s6, 3  # Divider for averaging
-    div $s1, $s6  # Divide sum by 3
-    mflo $s0  # Load quotient as grayscale value
-    li $s1, 0  # Reset sum
-    li $t7, 0  # Reset reversed_value position
-    li $t5, 10  # Reset line counter
+    # Determine padding needed for output grayscale value
+    blt $t2, 100, pad_2 # if value less than 100, 2 characters needed
+    addi $s1, $s1, 3 # prepare for 3 characters in output buffer
+    li $t7, 10 # ASCII for newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-# Convert integer grayscale value to ASCII string
-int_to_string:
-    div $s0, $t5  # Divide grayscale value by 10 to separate digits
-    mflo $s0  # Load quotient
-    mfhi $t3  # Load remainder
-    addi $t3, 48  # Convert remainder to ASCII
-    sb $t3, reversed_value($t7)  # Store ASCII character in reversed_value buffer
-    addi $t7, 1  # Increment reversed_value position
-    beq $s0, $zero, startReverse  # If quotient is 0, reverse the string
-    j int_to_string  # Otherwise, continue loop
+pad_2:
+    blt $t2, 10, pad_1 # if value less than 10, 1 character needed
+    addi $s1, $s1, 2 # prepare for 2 characters in output buffer
+    li $t7, 10 # ASCII for newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-# Reverse the ASCII string to get the correct order
-startReverse:
-    li $t6, 2  # Set position in reversed_value buffer
+pad_1:
+    addi $s1, $s1, 1 # prepare for 1 character in output buffer
+    li $t7, 10 # ASCII for newline
+    sb $t7, ($s1) # store newline to output buffer
+    j to_string # convert integer to string
 
-reverse_string:
-    lb $t2, reversed_value($t6)  # Load ASCII character from reversed_value
-    sb $t2, output($t4)  # Store ASCII character in output buffer
-    addi $t4, 1  # Increment output buffer position
-    beq $t6, $zero, newLine  # If all characters processed, add newline to output
-    sub $t6, 1  # Otherwise, decrement position in reversed_value
-    j reverse_string  # Continue loop
+to_string:
+    # Convert integer grayscale value to string
+    beqz $t2, end_to_string # if 0, end conversion
+    divu $t2, $t2, 10 # divide by 10 to get each digit
+    mfhi $t3 # get remainder
+    addi $t3, $t3, 48 # convert to ASCII
+    sb $t3, -1($s1) # store ASCII character to output buffer
+    addi $s1, $s1, -1 # move buffer pointer backward
+    addi $t0, $t0, 1 # increment character count
+    j to_string # loop
 
-# Add newline character to output buffer and continue loop
-newLine:
-    li $t5, 10  # ASCII value for newline
-    sb $t5, output($t4)  # Store newline in output buffer
-    addi $t4, 1  # Increment output buffer position
-    li $t5, 0  # Reset line counter
-    j pixel_value_loop  # Continue pixel value processing loop
+end_to_string:
+    # Finalize the conversion and prepare for next grayscale value
+    add $s1, $s1, $t0 # adjust output buffer pointer
+    addi $s1, $s1, 1 # move to next position
+    li $t0, 0 # reset character count
+    li $t4, 0 # reset grayscale sum
+    li $t3, 0 # reset pixel counter
+    j to_int # start reading next grayscale value
 
-# Write the grayscale data to the output file
-write_file:
-    li $v0, 4  # System call for print string
-    la $a0, outfile  # Address of output file path string
-    syscall  # Make system call
+end_file:
+    # End of file, finalize output buffer
+    sb $t1, ($s1) # store last byte to output buffer
+    sub $s2, $s1, $s2 # calculate the size of output data
 
-    # Open the output file for writing
-    li $v0, 13  # System call for open file
-    la $a0, outfile  # Address of output file name
-    li $a1, 1  # File mode (1 = write)
-    li $a2, 0  # Permissions (not needed for write)
-    syscall  # Make system call
-    move $s8, $v0  # Store file descriptor
+    # Write to output file
+    li $v0, 15 # syscall for writing to a file
+    move $a0, $s7 # move file descriptor to a0
+    la $a1, buffer_out # load address of output buffer
+    move $a2, $s2 # move size of data to a2
+    syscall # execute syscall
 
-    # Write the content of the output buffer to the file
-    li $v0, 15  # System call for write to file
-    move $a0, $s8  # File descriptor
-    la $a1, output  # Address of output buffer
-    li $a2, 50000  # Number of bytes to write
-    syscall  # Make system call
+close_files:
+    # Close input file
+    li $v0, 16 # syscall for closing a file
+    move $a0, $s6 # move file descriptor to a0
+    syscall # execute syscall
 
-    # Close the output file
-    li $v0, 16  # System call for close file
-    move $a0, $s8  # File descriptor
-    syscall  # Make system call
+    # Close output file
+    li $v0, 16 # syscall for closing a file
+    move $a0, $s7 # move file descriptor to a0
+    syscall # execute syscall
 
-# Exit the program
 exit:
-    li $v0, 10  # System call for exit
-    syscall  # Make system call
+    # Exit the program
+    li $v0, 10 # syscall for exit
+    syscall # execute syscall

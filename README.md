@@ -12,16 +12,20 @@ This README provides detailed instructions on how to run the provided MIPS assem
 ### 1. **Setting up the File Paths**
 Before running the programs, you need to set the file paths of the input and output images directly in the assembly code. The paths should be absolute.
 
-   **For `increase_brightness.asm`:**
-   - Locate the `.data` section at the beginning of the code.
-   - Modify the `filename` line to point to the location of your input PPM file.
+  **For `increase_brightness.asm`:**
+   - Navigate to the `.data` section, located at the top of the code.
+   - Edit the `file_in` line to direct it to the location of your input PPM file.
      ```mips
-     filename: .asciiz "ABSOLUTE_PATH_TO_YOUR_INPUT_FILE"
+     file_in: .asciiz "ABSOLUTE_PATH_TO_YOUR_INPUT_FILE"
      ```
-   - Modify the `outfile` line to specify where you want the new image to be saved.
+   - Adjust the `file_out` line to indicate the desired location for saving the new image.
      ```mips
-     outfile: .asciiz "ABSOLUTE_PATH_TO_YOUR_OUTPUT_FILE"
+     file_out: .asciiz "ABSOLUTE_PATH_TO_YOUR_OUTPUT_FILE"
      ```
+
+   **For `greyscale.asm`:**
+   - The modification steps mirror those outlined above. Simply adjust the `file_in` and `file_out` paths located in the `.data` section.
+
 
    **For `greyscale.asm`:**
    - The steps are the same as above; just modify the `filename` and `outfile` paths in the `.data` section.
