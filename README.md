@@ -28,7 +28,7 @@ Before running the programs, you need to set the file paths of the input and out
 
 
    **For `greyscale.asm`:**
-   - The steps are the same as above; just modify the `filename` and `outfile` paths in the `.data` section.
+   - The steps are the same as above; just modify the `file_in` and `file_out` paths in the `.data` section.
 
 ### 2. **Running the Programs**
    **Using QTSpim:**
